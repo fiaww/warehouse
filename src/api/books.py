@@ -88,8 +88,8 @@ def get_stats(start_date: datetime, end_date: datetime, db: Session = Depends(ge
     for roll in rolls:
         current_date = roll.added_date
         while current_date <= (roll.removed_date or datetime.utcnow()):
-            daily_counts[current_date.strftime("%Y-%m-%d")] += 1
-            daily_weights[current_date.strftime("%Y-%m-%d")] += roll.weight
+            daily_counts[current_date.strftime('%Y-%m-%d')] += 1
+            daily_weights[current_date.strftime('%Y-%m-%d')] += roll.weight
             current_date += timedelta(days=1)
 
     min_count_day = min(daily_counts, key=daily_counts.get)
