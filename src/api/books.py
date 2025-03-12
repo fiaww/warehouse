@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from ..models.books import Roll, RollCreate, RollResponse
-from datetime import datetime
+from datetime import datetime, timedelta
 from ..database import SessionLocal
 from typing import Optional
+from collections import defaultdict
 
 
 router = APIRouter()
@@ -80,6 +81,22 @@ def get_stats(start_date: datetime, end_date: datetime, db: Session = Depends(ge
     rolls = db.query(Roll).filter(Roll.added_date >= start_date, Roll.removed_date <= end_date).all()
     if not rolls:
         raise HTTPException(status_code=404, detail='No rolls found in this period')
+
+    daily_counts = defaultdict(int)
+    daily_weights = defaultdict(float)
+
+    for roll in rolls:
+        current_date = roll.added_date
+        while current_date <= (roll.removed_date or datetime.utcnow()):
+            daily_counts[current_date.strftime("%Y-%m-%d")] += 1
+            daily_weights[current_date.strftime("%Y-%m-%d")] += roll.weight
+            current_date += timedelta(days=1)
+
+    min_count_day = min(daily_counts, key=daily_counts.get)
+    max_count_day = max(daily_counts, key=daily_counts.get)
+
+    min_weight_day = min(daily_weights, key=daily_weights.get)
+    max_weight_day = max(daily_weights, key=daily_weights.get)
 
     stats = {
         'added_count': len([r for r in rolls if r.added_date >= start_date]),
